@@ -46,7 +46,7 @@ This project demonstrates how to build a simple four-function calculator using *
    ```bash
    cd spring-boot-calculator
    ```
-3. **Build & run** the Spring Boot app (Maven example):
+3. **Build & run** the Spring Boot app:
    ```bash
    mvn spring-boot:run
    ```
