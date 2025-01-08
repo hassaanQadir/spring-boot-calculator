@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Pretty Calculator</title>
+  <meta charset="UTF-8" />
+  <style>
+    body {
+      background: #f0f0f0;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      margin: 0;
+      /* We removed flex centering here so the header appears at the top */
+      padding: 1rem;
+    }
+
+    /* Header styling */
+    h1 {
+      text-align: center;
+      margin: 1rem 0;
+      color: #333;
+    }
+    
+    /* A container that will center the calculator */
+    .calculator-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2rem; /* space between header and calculator */
+    }
+
+    .calculator {
+      background: #333;
+      padding: 1rem;
+      border-radius: 1rem;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+      width: 320px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .display {
+      background: #222;
+      color: #0f0;
+      width: 100%;
+      height: 60px;
+      font-size: 2rem;
+      text-align: right;
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+      margin-bottom: 1rem;
+      box-sizing: border-box;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-gap: 0.5rem;
+      width: 100%;
+    }
+
+    button {
+      background: #444;
+      color: #fff;
+      font-size: 1.2rem;
+      border: none;
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    button:active {
+      background: #555;
+    }
+    
+    button.operator {
+      background: #ff9500;
+      color: #fff;
+    }
+    
+    button.operator:active {
+      background: #e07d00;
+    }
+    
+    button.equals {
+      background: #28a745;
+    }
+
+    button.equals:active {
+      background: #20893a;
+    }
+
+    button.clear {
+      grid-column: span 2;
+      background: #d9534f;
+    }
+    
+    button.clear:active {
+      background: #c12e2a;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header at the top -->
+  <h1>Hassaan's 4-Function Calculator</h1>
+
+  <!-- Center the calculator below the header -->
+  <div class="calculator-container">
+    <div class="calculator">
+      <div class="display" id="display">0</div>
+      <div class="buttons">
+        <button onclick="pressDigit('7')">7</button>
+        <button onclick="pressDigit('8')">8</button>
+        <button onclick="pressDigit('9')">9</button>
+        <button class="operator" onclick="chooseOperator('divide')">÷</button>
+        
+        <button onclick="pressDigit('4')">4</button>
+        <button onclick="pressDigit('5')">5</button>
+        <button onclick="pressDigit('6')">6</button>
+        <button class="operator" onclick="chooseOperator('multiply')">×</button>
+        
+        <button onclick="pressDigit('1')">1</button>
+        <button onclick="pressDigit('2')">2</button>
+        <button onclick="pressDigit('3')">3</button>
+        <button class="operator" onclick="chooseOperator('subtract')">−</button>
+        
+        <button onclick="pressDigit('0')">0</button>
+        <button onclick="pressDecimal()">.</button>
+
+        <button class="equals" onclick="calculate()">=</button>
+        <button class="operator" onclick="chooseOperator('add')">+</button>
+        
+        <button class="clear" onclick="clearAll()">C</button>
+        <button class="clear" onclick="clearEntry()">CE</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let operand1 = null;
+    let operand2 = null;
+    let currentOperator = null;
+    let shouldResetDisplay = false;
+
+    const display = document.getElementById('display');
+
+    function pressDigit(digit) {
+      if (display.innerText === '0' || shouldResetDisplay) {
+        display.innerText = digit;
+        shouldResetDisplay = false;
+      } else {
+        display.innerText += digit;
+      }
+    }
+
+    function pressDecimal() {
+      if (shouldResetDisplay) {
+        display.innerText = '0.';
+        shouldResetDisplay = false;
+      } 
+      else if (!display.innerText.includes('.')) {
+        display.innerText += '.';
+      }
+    }
+
+    function chooseOperator(operator) {
+      // If there's already an operation in progress, finalize it first
+      if (currentOperator !== null && !shouldResetDisplay) {
+        calculate();
+      }
+      operand1 = parseFloat(display.innerText);
+      currentOperator = operator;
+      shouldResetDisplay = true;
+    }
+
+    function calculate() {
+      if (currentOperator === null || shouldResetDisplay) return;
+      
+      operand2 = parseFloat(display.innerText);
+      if (isNaN(operand1) || isNaN(operand2)) return;
+
+      let endpoint;
+      switch (currentOperator) {
+        case 'add':
+          endpoint = '/add';
+          break;
+        case 'subtract':
+          endpoint = '/subtract';
+          break;
+        case 'multiply':
+          endpoint = '/multiply';
+          break;
+        case 'divide':
+          endpoint = '/divide';
+          break;
+      }
+
+      // Build query string: /add?num1=xx&num2=yy
+      const url = endpoint + '?num1=' + operand1 + '&num2=' + operand2;
+      
+      fetch(url)
+        .then(response => {
+          if (!response.ok) throw new Error("HTTP Error " + response.status);
+          return response.text();
+        })
+        .then(result => {
+          display.innerText = result;
+          // Prepare for next operation
+          operand1 = parseFloat(result);
+          operand2 = null;
+          currentOperator = null;
+          shouldResetDisplay = true;
+        })
+        .catch(error => {
+          display.innerText = 'Error';
+          console.error(error);
+          // Reset states
+          operand1 = null;
+          operand2 = null;
+          currentOperator = null;
+          shouldResetDisplay = true;
+        });
+    }
+
+    function clearAll() {
+      operand1 = null;
+      operand2 = null;
+      currentOperator = null;
+      display.innerText = '0';
+      shouldResetDisplay = false;
+    }
+
+    function clearEntry() {
+      // Clear only the current entry
+      display.innerText = '0';
+      shouldResetDisplay = true;
+    }
+  </script>
+</body>
+</html>
